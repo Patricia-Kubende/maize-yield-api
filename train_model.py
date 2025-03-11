@@ -4,10 +4,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 
 # Load cleaned dataset
-df = pd.read_csv("maize_yield_dataset_2000cleaned.csv")  # Update filename if needed
+df = pd.read_csv("maize_yield_dataset_2000cleaned.csv")
 
 # Define features (X) and target (y)
-target_column = "Yield_Bags_Per_Acre"  # Update if needed
+target_column = "Yield_Bags_Per_Acre" 
 X = df.drop(columns=[target_column])  # Features
 y = df[target_column]  # Target variable
 

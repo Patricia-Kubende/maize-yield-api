@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 
 # Load dataset
-df = pd.read_csv("maize_yield_dataset_2000cleaned.csv")  # Update the filename if needed
+df = pd.read_csv("maize_yield_dataset_2000cleaned.csv")
 
 # Define features (X) and target (y)
 target_column = "Yield_Bags_Per_Acre"

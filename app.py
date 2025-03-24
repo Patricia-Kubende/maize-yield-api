@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import SessionLocal, User, Prediction
 from passlib.context import CryptContext
@@ -8,6 +8,11 @@ import pandas as pd
 import uvicorn
 
 app = FastAPI()
+
+# ✅ Add Home Endpoint to Fix 404 Error
+@app.get("/")
+def home():
+    return {"message": "Welcome to the Maize Yield Prediction API!"}
 
 # Password hashing configuration
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -124,7 +129,7 @@ def predict_yield(data: dict, username: str, db: Session = Depends(get_db)):
     except Exception as e:
         return {"error": str(e)}
 
-# **🆕 View Past Predictions API**
+# **🆕 View Past Predictions API (Fixed)**
 @app.get("/predictions/{username}")
 def view_past_predictions(username: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == username).first()
@@ -136,7 +141,26 @@ def view_past_predictions(username: str, db: Session = Depends(get_db)):
     if not past_predictions:
         return {"message": "⚠️ No past predictions found for this user."}
 
-    return {"past_predictions": past_predictions}
+    return {
+        "past_predictions": [
+            {
+                "id": p.id,
+                "Soil_Type": p.Soil_Type,
+                "pH": p.pH,
+                "Seed_Variety": p.Seed_Variety,
+                "Rainfall_mm": p.Rainfall_mm,
+                "Temperature_C": p.Temperature_C,
+                "Humidity_percent": p.Humidity_percent,
+                "Planting_Date": p.Planting_Date,
+                "Fertilizer_Type": p.Fertilizer_Type,
+                "Predicted_Yield": p.Predicted_Yield,
+                "Confidence_Range": p.Confidence_Range,
+                "Category": p.Category,
+                "Recommendation": p.Recommendation,
+            }
+            for p in past_predictions
+        ]
+    }
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))

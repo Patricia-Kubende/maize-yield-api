@@ -1,0 +1,10 @@
+{
+    "Soil_Type": "Loam",
+    "pH": 5.5,
+    "Seed_Variety": "Hybrid A",
+    "Rainfall_mm": 600,
+    "Temperature_C": 23,
+    "Humidity_%": 30,
+    "Planting_Date": "May",
+    "Fertilizer_Type": "NPK"
+}

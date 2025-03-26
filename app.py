@@ -2,20 +2,11 @@ import os
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import SessionLocal, User, Prediction
-from passlib.context import CryptContext
 import pickle
 import pandas as pd
 import uvicorn
 
 app = FastAPI()
-
-# ✅ Add Home Endpoint to Fix 404 Error
-@app.get("/")
-def home():
-    return {"message": "Welcome to the Maize Yield Prediction API!"}
-
-# Password hashing configuration
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Load trained model once at startup
 with open("final_model.pkl", "rb") as file:
@@ -29,35 +20,28 @@ def get_db():
     finally:
         db.close()
 
-# Hash password before storing
-def hash_password(password: str):
-    return pwd_context.hash(password)
-
-# Verify password
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
-
-# 🆕 **Signup Endpoint**
+# 🆕 **Signup Endpoint (NO HASHING)**
 @app.post("/signup/")
 def signup(username: str, password: str, db: Session = Depends(get_db)):
     existing_user = db.query(User).filter(User.username == username).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="❌ Username already exists. Choose another.")
-    
-    new_user = User(username=username, password=hash_password(password))
+
+    # 🔹 Store password directly (not secure, only for debugging!)
+    new_user = User(username=username, password=password)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    
+
     return {"message": "✅ Signup successful! You can now log in."}
 
-# 🆕 **Login Endpoint**
+# 🆕 **Login Endpoint (NO HASHING)**
 @app.post("/login/")
 def login(username: str, password: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == username).first()
-    if not user or not verify_password(password, user.password):
+    if not user or user.password != password:  # No hashing check
         raise HTTPException(status_code=401, detail="❌ Invalid username or password.")
-    
+
     return {"message": "✅ Login successful! You can now access predictions."}
 
 # **🔐 Protected Prediction Endpoint**
@@ -129,7 +113,7 @@ def predict_yield(data: dict, username: str, db: Session = Depends(get_db)):
     except Exception as e:
         return {"error": str(e)}
 
-# **🆕 View Past Predictions API (Fixed)**
+# **🆕 View Past Predictions API**
 @app.get("/predictions/{username}")
 def view_past_predictions(username: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == username).first()
@@ -141,26 +125,7 @@ def view_past_predictions(username: str, db: Session = Depends(get_db)):
     if not past_predictions:
         return {"message": "⚠️ No past predictions found for this user."}
 
-    return {
-        "past_predictions": [
-            {
-                "id": p.id,
-                "Soil_Type": p.Soil_Type,
-                "pH": p.pH,
-                "Seed_Variety": p.Seed_Variety,
-                "Rainfall_mm": p.Rainfall_mm,
-                "Temperature_C": p.Temperature_C,
-                "Humidity_percent": p.Humidity_percent,
-                "Planting_Date": p.Planting_Date,
-                "Fertilizer_Type": p.Fertilizer_Type,
-                "Predicted_Yield": p.Predicted_Yield,
-                "Confidence_Range": p.Confidence_Range,
-                "Category": p.Category,
-                "Recommendation": p.Recommendation,
-            }
-            for p in past_predictions
-        ]
-    }
+    return {"past_predictions": past_predictions}
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
